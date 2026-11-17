@@ -70,7 +70,7 @@ guard-flow/
 
 ## 5. 编码约定（违反即返工）
 
-1. **时间只能来自注入的 `Clock`**。`algorithm-core` 内出现 `System.currentTimeMillis()`、`Instant.now()`、`new Date()` 一律不允许。
+1. **时间只能来自注入的 `Clock`**。`algorithm-core` 内出现 `System.currentTimeMillis()`、`Instant.now()`、`new Date()` 一律不允许；唯一例外是 `SystemClock`——它是生产时间源适配器，只有它的 `nowMillis()` 实现可以读取系统墙上时钟。
 2. 限流器必须**无副作用、可重放**：同一时间序列 + 同一参数 → 同一结果序列。
 3. 公开方法参数统一为 `long nowMillis`，不使用 `Instant`/`LocalDateTime`，避免时区问题。
 4. 拒绝原因必须取自 `RejectReason` 枚举，禁止自由字符串。
