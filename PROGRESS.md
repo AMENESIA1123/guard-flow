@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**工程骨架就绪，待进入 T1**
-- 已完成任务卡：`T0`
-- 下一个任务卡：`T1`
+- 阶段：**T1 核心契约完成，待进入 T2**
+- 已完成任务卡：`T0`、`T1`
+- 下一个任务卡：`T2`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -18,19 +18,22 @@
 | 任务卡 | 内容 | 提交 | 验收结果 |
 |---|---|---|---|
 | T0 | 工程骨架与 CI（空多模块） | `feat(T0): 工程骨架` | `mvn -q clean verify` 退出码 0；全仓库无 `.java` 文件 |
+| T1 | 核心契约与 FakeClock | `feat(T1): 核心契约与 FakeClock` | `mvn -q -pl algorithm-core compile` 退出码 0；grep 无输出；`mvn -q clean verify` 退出码 0 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T1 · 核心契约与 FakeClock** 开始。
+从 `docs/tasks.md` 的 **T2 · 固定窗口** 开始。
 
 ---
 
 ## 已知问题 / 阻塞
 
-- 本地 Maven 为 3.10.1（`AGENTS.md` 标注 3.9.x），已由人确认使用。
-- 在 DSH 工作区沙箱下，Maven 需写入 `C:\Users\zb273\.m2`，验收命令需完全权限执行。
+- 本地 Maven 为 3.10.1（`AGENTS.md` 标注 3.9.x），已由人确认使用；全局 settings 指向 `D:\local-repo` 与阿里云镜像。
+- 在 DSH 工作区沙箱下，Maven 需完全权限写 `D:\local-repo`，git 需完全权限写 `.git`。
+- `SystemClock` 是 algorithm-core 中唯一允许调用 `System.currentTimeMillis()` 的类（T1 人确认的例外）。
+- `FakeClock` 初始 `t=0`，`advanceTo` 直接设值、`advanceBy` 累加，不禁止回拨。
 
 ---
 
