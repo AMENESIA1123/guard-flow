@@ -103,4 +103,24 @@ class FixedWindowLimiterTest {
         assertThat(passed).isEqualTo(20);
         assertThat(limiter.snapshot(1000L).used()).isEqualTo(10.0);
     }
+
+    @Test
+    void nonPositivePermits_returnInvalidParamAndKeepState() {
+        // 规格 §0.3：permits ≤ 0 返回 INVALID_PARAM，且不改变窗口状态。
+        FixedWindowLimiter limiter = new FixedWindowLimiter(LIMIT, WINDOW_MILLIS);
+
+        Decision granted = limiter.tryAcquire(0L, LIMIT);
+        assertThat(granted.allowed()).isTrue();
+        assertThat(granted.level()).isCloseTo(1.0, within(1e-9));
+
+        Decision zeroPermits = limiter.tryAcquire(0L, 0);
+        assertThat(zeroPermits.allowed()).isFalse();
+        assertThat(zeroPermits.reason()).isEqualTo(RejectReason.INVALID_PARAM);
+        assertThat(zeroPermits.level()).isCloseTo(1.0, within(1e-9));
+
+        Decision negativePermits = limiter.tryAcquire(0L, -1);
+        assertThat(negativePermits.allowed()).isFalse();
+        assertThat(negativePermits.reason()).isEqualTo(RejectReason.INVALID_PARAM);
+        assertThat(limiter.snapshot(0L).used()).isEqualTo(10.0);
+    }
 }

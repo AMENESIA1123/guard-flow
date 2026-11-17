@@ -19,7 +19,7 @@
 |---|---|---|---|
 | T0 | 工程骨架与 CI（空多模块） | `feat(T0): 工程骨架` | `mvn -q clean verify` 退出码 0；全仓库无 `.java` 文件 |
 | T1 | 核心契约与 FakeClock | `feat(T1): 核心契约与 FakeClock` | `mvn -q -pl algorithm-core compile` 退出码 0；grep 无输出；`mvn -q clean verify` 退出码 0 |
-| T2 | 固定窗口 | `feat(T2): 实现固定窗口` | `mvn -pl algorithm-core test -Dtest=FixedWindowLimiterTest` 5 个用例全绿；`mvn -q clean verify` 退出码 0 |
+| T2 | 固定窗口 | `feat(T2): 实现固定窗口`；`test(T2): 覆盖非法 permits` | `mvn -pl algorithm-core test -Dtest=FixedWindowLimiterTest` 6 个用例全绿（FW-01~FW-05 + 非法 permits）；`mvn -q clean verify` 退出码 0 |
 
 ---
 
