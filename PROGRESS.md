@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T1 核心契约完成，待进入 T2**
-- 已完成任务卡：`T0`、`T1`
-- 下一个任务卡：`T2`
+- 阶段：**T2 固定窗口完成，待进入 T3**
+- 已完成任务卡：`T0`、`T1`、`T2`
+- 下一个任务卡：`T3`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -19,12 +19,13 @@
 |---|---|---|---|
 | T0 | 工程骨架与 CI（空多模块） | `feat(T0): 工程骨架` | `mvn -q clean verify` 退出码 0；全仓库无 `.java` 文件 |
 | T1 | 核心契约与 FakeClock | `feat(T1): 核心契约与 FakeClock` | `mvn -q -pl algorithm-core compile` 退出码 0；grep 无输出；`mvn -q clean verify` 退出码 0 |
+| T2 | 固定窗口 | `feat(T2): 实现固定窗口` | `mvn -pl algorithm-core test -Dtest=FixedWindowLimiterTest` 5 个用例全绿；`mvn -q clean verify` 退出码 0 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T2 · 固定窗口** 开始。
+从 `docs/tasks.md` 的 **T3 · 滑动窗口（日志法）** 开始。
 
 ---
 
@@ -32,8 +33,9 @@
 
 - 本地 Maven 为 3.10.1（`AGENTS.md` 标注 3.9.x），已由人确认使用；全局 settings 指向 `D:\local-repo` 与阿里云镜像。
 - 在 DSH 工作区沙箱下，Maven 需完全权限写 `D:\local-repo`，git 需完全权限写 `.git`。
-- `SystemClock` 是 algorithm-core 中唯一允许调用 `System.currentTimeMillis()` 的类（T1 人确认的例外）。
+- `SystemClock` 是 algorithm-core 中唯一允许调用 `System.currentTimeMillis()` 的类（T1 人确认的例外，已写入 `AGENTS.md` §5.1）。
 - `FakeClock` 初始 `t=0`，`advanceTo` 直接设值、`advanceBy` 累加，不禁止回拨。
+- `tryAcquire(t, n)` 统一返回最后一个许可的 `Decision`；`permits <= 0` 返回 `INVALID_PARAM` 且不改变状态（规格 §0.2 未明说聚合语义，T2 起按此实现）。
 
 ---
 
