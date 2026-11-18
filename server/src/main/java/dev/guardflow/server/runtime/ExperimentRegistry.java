@@ -79,6 +79,10 @@ public class ExperimentRegistry {
         return runtime;
     }
 
+    public List<ExperimentRuntime> all() {
+        return List.copyOf(experiments.values());
+    }
+
     public ExperimentView view(String id) {
         return get(id).view();
     }

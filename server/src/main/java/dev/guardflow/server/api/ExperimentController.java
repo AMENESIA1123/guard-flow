@@ -6,6 +6,7 @@ import dev.guardflow.server.api.dto.ExperimentView;
 import dev.guardflow.server.runtime.ExperimentRegistry;
 import dev.guardflow.server.runtime.ExperimentRuntime;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -23,9 +25,11 @@ import java.util.Map;
 public class ExperimentController {
 
     private final ExperimentRegistry registry;
+    private final SseHub sseHub;
 
-    public ExperimentController(ExperimentRegistry registry) {
+    public ExperimentController(ExperimentRegistry registry, SseHub sseHub) {
         this.registry = registry;
+        this.sseHub = sseHub;
     }
 
     @PostMapping
@@ -44,6 +48,7 @@ public class ExperimentController {
     @PostMapping("/{id}/control")
     public ControlResponse control(@PathVariable String id, @RequestBody ControlRequest request) {
         ExperimentRuntime runtime = registry.control(id, request.action());
+        sseHub.broadcast(id, "state", Map.of("status", runtime.status().wireName()));
         return new ControlResponse(runtime.id(), runtime.status().wireName());
     }
 
@@ -52,9 +57,16 @@ public class ExperimentController {
         return registry.view(id);
     }
 
+    @GetMapping(path = "/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream(@PathVariable String id) {
+        ExperimentView snapshot = registry.view(id);
+        return sseHub.subscribe(id, snapshot);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         registry.delete(id);
+        sseHub.close(id);
         return ResponseEntity.noContent().build();
     }
 
