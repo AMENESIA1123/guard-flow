@@ -168,7 +168,31 @@ input.invalid { border-color: #ef4444; }
   color: var(--muted);
   font-size: 12px;
 }
+.chart-body { position: relative; flex: 1; min-height: 0; display: flex; }
 .chart-canvas { flex: 1; width: 100%; min-height: 0; display: block; }
+.chart-crosshair {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--muted);
+  opacity: 0.65;
+  pointer-events: none;
+}
+.chart-tooltip {
+  position: fixed;
+  z-index: 20;
+  max-width: 260px;
+  padding: 8px 10px;
+  background: #1f2937;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+}
 
 .reason-bar { height: 48px; flex: 0 0 48px; display: flex; align-items: center; padding: 0 12px; }
 .reason-chips { display: flex; flex-wrap: wrap; gap: 8px; }

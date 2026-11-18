@@ -185,6 +185,39 @@ export function drawLevelChart(ctx, samples, opts) {
   ctx.fillText(`${Math.round(samples[samples.length - 1].level * 100)}%`, width - PAD.right - 4, 12);
 }
 
+export function locateSample(width, x, samples) {
+  const plotWidth = width - PAD.left - PAD.right;
+  if (!samples.length || x < PAD.left || x > width - PAD.right) return null;
+  const slot = plotWidth / SLOTS;
+  const index = Math.floor((x - PAD.left) / slot) - (SLOTS - samples.length);
+  if (index < 0 || index >= samples.length) return null;
+  return { sample: samples[index], x: PAD.left + (SLOTS - samples.length + index + 0.5) * slot };
+}
+
+export function attachChartHover(canvas, crosshair, tooltip, getSamples) {
+  const hide = () => { crosshair.hidden = true; tooltip.hidden = true; };
+  canvas.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const found = locateSample(rect.width, event.clientX - rect.left, getSamples());
+    if (!found) { hide(); return; }
+    const sample = found.sample;
+    crosshair.hidden = false;
+    crosshair.style.left = `${found.x}px`;
+    tooltip.innerHTML = `t=${sample.t}ms<br>offered=${sample.offered} passed=${sample.passed} rejected=${sample.rejected}<br>level=${(sample.level * 100).toFixed(1)}%`;
+    tooltip.hidden = false;
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    let left = event.clientX + 12;
+    let top = event.clientY + 12;
+    if (left + width > window.innerWidth - 8) left = event.clientX - width - 12;
+    if (top + height > window.innerHeight - 8) top = event.clientY - height - 12;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+  });
+  canvas.addEventListener('mouseleave', hide);
+  return hide;
+}
+
 export function createChartScheduler(decisionCanvas, levelCanvas, getState) {
   const decisionCtx = decisionCanvas.getContext('2d');
   const levelCtx = levelCanvas.getContext('2d');

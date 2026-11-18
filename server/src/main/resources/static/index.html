@@ -62,12 +62,18 @@
 
         <section class="panel chart-panel chart-a">
           <div class="panel-head"><span>图 A · 决策堆叠柱</span><span>最近 30 秒</span></div>
-          <canvas id="decision-chart" class="chart-canvas" aria-label="决策堆叠柱图"></canvas>
+          <div class="chart-body">
+            <canvas id="decision-chart" class="chart-canvas" aria-label="决策堆叠柱图"></canvas>
+            <div id="decision-crosshair" class="chart-crosshair" hidden></div>
+          </div>
         </section>
 
         <section class="panel chart-panel chart-b">
           <div class="panel-head"><span>图 B · 水位折线</span><span>最近 30 秒</span></div>
-          <canvas id="level-chart" class="chart-canvas" aria-label="水位折线图"></canvas>
+          <div class="chart-body">
+            <canvas id="level-chart" class="chart-canvas" aria-label="水位折线图"></canvas>
+            <div id="level-crosshair" class="chart-crosshair" hidden></div>
+          </div>
         </section>
 
         <section class="panel reason-bar" aria-label="拒绝原因">
@@ -78,6 +84,7 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="chart-tooltip" class="chart-tooltip" hidden></div>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

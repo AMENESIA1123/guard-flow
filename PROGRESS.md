@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T9 Canvas 图表渲染完成，待进入 T10**
-- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`、`T9`
-- 下一个任务卡：`T10`
+- 阶段：**T10 控件联动与倍速完成，待进入 T11**
+- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`、`T9`、`T10`
+- 下一个任务卡：`T11`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -27,12 +27,13 @@
 | T7 | SSE 指标流 | `feat(T7): SSE 指标流` | `mvn -q clean verify` 退出码 0（核心 30 + server 9）；`curl -N /stream` 收到 `snapshot` + 连续 `sample`；断开后日志无异常 |
 | T8 | 前端骨架与静态托管 | `feat(T8): 前端骨架与静态托管` | `mvn -q clean verify` 退出码 0；headless 浏览器验证：4 张算法卡、动态参数、20qps 令牌桶启动后 KPI 增长、暂停冻结、重置归零 |
 | T9 | Canvas 图表渲染 | `feat(T9): Canvas 图表渲染` | `mvn -q verify` 退出码 0；headless Chrome 验证固定窗口/令牌桶图形差异、DPR=2 画布 1644×422、暂停冻结、重置归零 |
+| T10 | 控件联动与倍速 | `feat(T10): 控件联动与倍速` | `mvn -q verify` 退出码 0；headless Chrome：50x 下 900ms 内 offered=700、hover 显示 t/offered/passed/rejected/level、参数变更后重建为空闲、越界禁用开始 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T10 · 控件联动与倍速** 开始。
+从 `docs/tasks.md` 的 **T11 · Redis 分布式实现** 开始。
 
 ---
 
@@ -58,6 +59,9 @@
 - T8 图表区仍是 `<pre>` 最近 3 条 Sample + 图 B 占位；Canvas 留给 T9。参数/算法/倍速变更只置 `needsNew`，下次 Start 时重建；运行中变更需先暂停（§7 的即时联动留到 T10）。
 - T9 图表：`charts.js` 导出 `drawDecisionChart`、`drawLevelChart`，另有 `createChartScheduler` 统一 rAF/DPR；`app.js` 环形缓冲 300 点，数据到达只调度不直接重绘。
 - T9 验收：固定窗口决策图呈周期性放行/拒绝块、令牌桶水位呈锯齿；DPR=2 时 canvas backing store 为 CSS 尺寸的 2 倍。
+- T10 联动：合法参数/算法/倍速变更经 300ms 防抖后 pause → DELETE → POST idle；非法参数只暂停不删除；`start` 在 dirty/busy/running 时禁用。
+- T10 倍速：50x = 每 100ms 推进 50 个逻辑帧，30s 逻辑约 600ms；实测 900ms 内 offered=700。
+- T10 hover：`charts.js` 的 `locateSample` + DOM 参考线 + fixed tooltip，距视口边 8px 翻转；`index.html` 因此增加 tooltip/crosshair 容器。
 
 ---
 
