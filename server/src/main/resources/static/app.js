@@ -1,3 +1,5 @@
+import { createChartScheduler } from './charts.js';
+
 const ORDER = ['fixed_window', 'sliding_window', 'token_bucket', 'leaky_bucket'];
 const REASONS = ['WINDOW_LIMIT', 'QUEUE_FULL', 'NO_TOKEN', 'PASSED'];
 const $ = (id) => document.getElementById(id);
@@ -6,6 +8,7 @@ const state = {
   busy: false, needsNew: true, totals: { offered: 0, passed: 0, rejected: 0 },
   reasons: { WINDOW_LIMIT: 0, QUEUE_FULL: 0, NO_TOKEN: 0, PASSED: 0 }, samples: [], level: 0,
 };
+const scheduleDraw = createChartScheduler($('decision-chart'), $('level-chart'), () => ({ samples: state.samples, algorithm: state.algorithm }));
 async function api(path, options = {}) {
   const response = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
   const text = await response.text();
@@ -116,8 +119,8 @@ function render() {
   $('kpi-passed').textContent = String(state.totals.passed);
   $('kpi-rejected').textContent = String(state.totals.rejected);
   $('kpi-level').textContent = `${(state.level * 100).toFixed(1)}%`;
-  $('sample-preview').textContent = JSON.stringify(state.samples.slice(-3), null, 2);
   $('reason-chips').innerHTML = REASONS.map((reason) => `<span class="chip${state.reasons[reason] ? '' : ' zero'}"><span class="chip-name">${reason}</span> <span class="chip-count">${state.reasons[reason]}</span></span>`).join('');
+  scheduleDraw();
 }
 function clearData() {
   state.totals = { offered: 0, passed: 0, rejected: 0 };
@@ -132,10 +135,7 @@ function syncButtons() {
   $('pause-btn').disabled = state.busy || state.status !== 'running';
   $('reset-btn').disabled = state.busy || state.status === 'idle';
 }
-function setConnection(connected) {
-  $('backend-badge').classList.toggle('disconnected', !connected);
-  $('backend-text').textContent = connected ? 'local' : '连接断开';
-}
+function setConnection(connected) { $('backend-badge').classList.toggle('disconnected', !connected); $('backend-text').textContent = connected ? 'local' : '连接断开'; }
 function closeStream() {
   if (state.stream) { state.stream.close(); state.stream = null; }
   setConnection(true);
@@ -153,7 +153,7 @@ function applySnapshot(view) {
   state.status = view.status;
   state.totals = { ...view.totals };
   state.level = view.level;
-  state.samples = (view.samples || []).slice(-3);
+  state.samples = (view.samples || []).slice(-300);
   state.reasons = { WINDOW_LIMIT: 0, QUEUE_FULL: 0, NO_TOKEN: 0, PASSED: view.totals.passed };
   (view.samples || []).forEach((sample) => {
     if (sample.rejected > 0 && sample.reason !== 'PASSED' && state.reasons[sample.reason] !== undefined) state.reasons[sample.reason] += sample.rejected;
@@ -170,7 +170,7 @@ function applySample(sample) {
   if (sample.rejected > 0 && sample.reason !== 'PASSED' && state.reasons[sample.reason] !== undefined) state.reasons[sample.reason] += sample.rejected;
   state.level = sample.level;
   state.samples.push(sample);
-  if (state.samples.length > 3) state.samples.shift();
+  if (state.samples.length > 300) state.samples.shift();
   render();
 }
 async function start() {

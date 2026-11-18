@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T8 前端骨架与静态托管完成，待进入 T9**
-- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`
-- 下一个任务卡：`T9`
+- 阶段：**T9 Canvas 图表渲染完成，待进入 T10**
+- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`、`T9`
+- 下一个任务卡：`T10`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -26,12 +26,13 @@
 | T6 | 服务骨架与 REST | `feat(T6): 服务骨架与 REST`；`test(T6): 覆盖参数校验 400` | `mvn -q clean verify` 退出码 0（核心 30 + server 8）；`mvn -q clean package -DskipTests` 退出码 0；启动后 `/api/algorithms` 返回 4 个算法 |
 | T7 | SSE 指标流 | `feat(T7): SSE 指标流` | `mvn -q clean verify` 退出码 0（核心 30 + server 9）；`curl -N /stream` 收到 `snapshot` + 连续 `sample`；断开后日志无异常 |
 | T8 | 前端骨架与静态托管 | `feat(T8): 前端骨架与静态托管` | `mvn -q clean verify` 退出码 0；headless 浏览器验证：4 张算法卡、动态参数、20qps 令牌桶启动后 KPI 增长、暂停冻结、重置归零 |
+| T9 | Canvas 图表渲染 | `feat(T9): Canvas 图表渲染` | `mvn -q verify` 退出码 0；headless Chrome 验证固定窗口/令牌桶图形差异、DPR=2 画布 1644×422、暂停冻结、重置归零 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T9 · Canvas 图表渲染** 开始。
+从 `docs/tasks.md` 的 **T10 · 控件联动与倍速** 开始。
 
 ---
 
@@ -55,6 +56,8 @@
 - `ExperimentRuntimeTest` 固定 20qps + 令牌桶 10/2，20 次 tick 后 totals 为 offered=40 / passed=13 / rejected=27。
 - T8 前端：`app.js` 250 行、零依赖；默认算法 `fixed_window`，卡片顺序按 ui-spec 固定为 fixed → sliding → token → leaky（不按 API 顺序）。
 - T8 图表区仍是 `<pre>` 最近 3 条 Sample + 图 B 占位；Canvas 留给 T9。参数/算法/倍速变更只置 `needsNew`，下次 Start 时重建；运行中变更需先暂停（§7 的即时联动留到 T10）。
+- T9 图表：`charts.js` 导出 `drawDecisionChart`、`drawLevelChart`，另有 `createChartScheduler` 统一 rAF/DPR；`app.js` 环形缓冲 300 点，数据到达只调度不直接重绘。
+- T9 验收：固定窗口决策图呈周期性放行/拒绝块、令牌桶水位呈锯齿；DPR=2 时 canvas backing store 为 CSS 尺寸的 2 倍。
 
 ---
 

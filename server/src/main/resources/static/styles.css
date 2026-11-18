@@ -168,20 +168,7 @@ input.invalid { border-color: #ef4444; }
   color: var(--muted);
   font-size: 12px;
 }
-.sample-preview {
-  flex: 1;
-  margin: 0;
-  overflow: auto;
-  padding: 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--muted);
-  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-  font-size: 11px;
-  white-space: pre-wrap;
-}
-.placeholder { flex: 1; display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+.chart-canvas { flex: 1; width: 100%; min-height: 0; display: block; }
 
 .reason-bar { height: 48px; flex: 0 0 48px; display: flex; align-items: center; padding: 0 12px; }
 .reason-chips { display: flex; flex-wrap: wrap; gap: 8px; }
