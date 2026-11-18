@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T2 固定窗口完成，待进入 T3**
-- 已完成任务卡：`T0`、`T1`、`T2`
-- 下一个任务卡：`T3`
+- 阶段：**T3 滑动窗口完成，待进入 T4**
+- 已完成任务卡：`T0`、`T1`、`T2`、`T3`
+- 下一个任务卡：`T4`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -20,12 +20,13 @@
 | T0 | 工程骨架与 CI（空多模块） | `feat(T0): 工程骨架` | `mvn -q clean verify` 退出码 0；全仓库无 `.java` 文件 |
 | T1 | 核心契约与 FakeClock | `feat(T1): 核心契约与 FakeClock` | `mvn -q -pl algorithm-core compile` 退出码 0；grep 无输出；`mvn -q clean verify` 退出码 0 |
 | T2 | 固定窗口 | `feat(T2): 实现固定窗口`；`test(T2): 覆盖非法 permits` | `mvn -pl algorithm-core test -Dtest=FixedWindowLimiterTest` 6 个用例全绿（FW-01~FW-05 + 非法 permits）；`mvn -q clean verify` 退出码 0 |
+| T3 | 滑动窗口（日志法） | `feat(T3): 实现滑动窗口` | `mvn -pl algorithm-core test -Dtest=SlidingWindowLogLimiterTest` 7 个用例全绿；`mvn -q clean verify` 退出码 0 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T3 · 滑动窗口（日志法）** 开始。
+从 `docs/tasks.md` 的 **T4 · 令牌桶** 开始。
 
 ---
 
@@ -36,6 +37,8 @@
 - `SystemClock` 是 algorithm-core 中唯一允许调用 `System.currentTimeMillis()` 的类（T1 人确认的例外，已写入 `AGENTS.md` §5.1）。
 - `FakeClock` 初始 `t=0`，`advanceTo` 直接设值、`advanceBy` 累加，不禁止回拨。
 - `tryAcquire(t, n)` 统一返回最后一个许可的 `Decision`；`permits <= 0` 返回 `INVALID_PARAM` 且不改变状态（规格 §0.2 未明说聚合语义，T2 起按此实现）。
+- `LimiterFactory` 的算法 id 以 `api.md` 为准：`fixed_window`、`sliding_window`、`token_bucket`、`leaky_bucket`。
+- 滑动窗口日志按非递减时间戳存储，`t` 相同的多条记录是允许的（SW-01 要求 `t=0` × 10）；规格里的「严格递增」按非递减理解。
 
 ---
 

@@ -1,6 +1,7 @@
 package dev.guardflow.core;
 
 import dev.guardflow.core.limiter.FixedWindowLimiter;
+import dev.guardflow.core.limiter.SlidingWindowLogLimiter;
 
 import java.util.Map;
 
@@ -26,6 +27,13 @@ public final class LimiterFactory {
                 throw new IllegalArgumentException("params must not be null");
             }
             return new FixedWindowLimiter(requireInt(params, "limit"), requireLong(params, "windowMillis"));
+        }
+        if ("sliding_window".equals(algorithm)) {
+            Map<String, Number> params = config.params();
+            if (params == null) {
+                throw new IllegalArgumentException("params must not be null");
+            }
+            return new SlidingWindowLogLimiter(requireInt(params, "limit"), requireLong(params, "windowMillis"));
         }
         throw new UnsupportedOperationException("unsupported algorithm: " + algorithm);
     }
