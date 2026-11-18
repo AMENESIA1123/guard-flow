@@ -23,7 +23,7 @@
 | T3 | 滑动窗口（日志法） | `feat(T3): 实现滑动窗口` | `mvn -pl algorithm-core test -Dtest=SlidingWindowLogLimiterTest` 7 个用例全绿；`mvn -q clean verify` 退出码 0 |
 | T4 | 令牌桶 | `feat(T4): 实现令牌桶` | `mvn -pl algorithm-core test -Dtest=TokenBucketLimiterTest` 6 个用例全绿；`mvn -q clean verify` 退出码 0 |
 | T5 | 漏桶 + 工厂补全 | `feat(T5): 实现漏桶与工厂补全` | `mvn -pl algorithm-core test` 30 个用例全绿（四个算法测试 + 工厂测试）；`mvn -q clean verify` 退出码 0 |
-| T6 | 服务骨架与 REST | `feat(T6): 服务骨架与 REST` | `mvn -q clean verify` 退出码 0（核心 30 + server 7）；`mvn -q clean package -DskipTests` 退出码 0；启动后 `/api/algorithms` 返回 4 个算法 |
+| T6 | 服务骨架与 REST | `feat(T6): 服务骨架与 REST`；`test(T6): 覆盖参数校验 400` | `mvn -q clean verify` 退出码 0（核心 30 + server 8）；`mvn -q clean package -DskipTests` 退出码 0；启动后 `/api/algorithms` 返回 4 个算法 |
 
 ---
 

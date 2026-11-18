@@ -42,6 +42,21 @@ class ApiSmokeTest {
     }
 
     @Test
+    void invalidParamsReturn400() throws Exception {
+        mockMvc.perform(post("/api/experiments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "algorithm": "token_bucket",
+                                  "params": { "capacity": 0, "ratePerSecond": 2 },
+                                  "input": { "mode": "constant", "qps": 20 }
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_PARAM"));
+    }
+
+    @Test
     void createStartTickAndReadSnapshot() throws Exception {
         String createBody = """
                 {
