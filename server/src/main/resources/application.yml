@@ -1,0 +1,9 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: guard-flow
+guardflow:
+  tick-millis: 100
+  buffer-size: 300
+  max-experiments: 20

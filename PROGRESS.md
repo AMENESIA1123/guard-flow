@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T5 漏桶与工厂完成，待进入 T6**
-- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`
-- 下一个任务卡：`T6`
+- 阶段：**T6 服务骨架与 REST 完成，待进入 T7**
+- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`
+- 下一个任务卡：`T7`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -23,12 +23,13 @@
 | T3 | 滑动窗口（日志法） | `feat(T3): 实现滑动窗口` | `mvn -pl algorithm-core test -Dtest=SlidingWindowLogLimiterTest` 7 个用例全绿；`mvn -q clean verify` 退出码 0 |
 | T4 | 令牌桶 | `feat(T4): 实现令牌桶` | `mvn -pl algorithm-core test -Dtest=TokenBucketLimiterTest` 6 个用例全绿；`mvn -q clean verify` 退出码 0 |
 | T5 | 漏桶 + 工厂补全 | `feat(T5): 实现漏桶与工厂补全` | `mvn -pl algorithm-core test` 30 个用例全绿（四个算法测试 + 工厂测试）；`mvn -q clean verify` 退出码 0 |
+| T6 | 服务骨架与 REST | `feat(T6): 服务骨架与 REST` | `mvn -q clean verify` 退出码 0（核心 30 + server 7）；`mvn -q clean package -DskipTests` 退出码 0；启动后 `/api/algorithms` 返回 4 个算法 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T6 · 服务骨架与 REST** 开始。
+从 `docs/tasks.md` 的 **T7 · SSE 指标流** 开始。
 
 ---
 
@@ -44,6 +45,9 @@
 - 令牌桶的 `Snapshot.used` 返回剩余令牌数（与 `level = tokens / capacity` 一致），不是已消耗量。
 - 漏桶的 `Snapshot.used` 返回当前排队数（`queued`）。
 - `LimiterFactoryTest` 是按 T5 卡新增的，`file-manifest.md` 未列；工厂对未知算法 id 现抛 `IllegalArgumentException`（覆盖 T2 的 `UnsupportedOperationException` 占位行为）。
+- REST 错误映射：`IllegalArgumentException` → 400 `INVALID_PARAM`；`NoSuchElementException` → 404 `EXPERIMENT_NOT_FOUND`；`IllegalStateException` → 409 `EXPERIMENT_STATE`；其他 → 500 `INTERNAL`。
+- 输入生成：`constant` / `step` 用 ceil 把每秒 qps 摊到 10 帧（qps=1 时第一帧就到 1 个）；`spike` 在 `t=0` 及每个 `everyMillis` 整点叠加 burst；`poisson` 用单个 `Random(seed)`，必须按 tick 顺序调用。
+- `ExperimentRuntime` 首帧 `t=0`，`view().t` 取最近一条 sample；重置依赖构造时的 Supplier，`ExperimentRegistry` 使用 Supplier 重建 limiter 与 input。
 
 ---
 
