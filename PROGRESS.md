@@ -28,7 +28,7 @@
 | T8 | 前端骨架与静态托管 | `feat(T8): 前端骨架与静态托管` | `mvn -q clean verify` 退出码 0；headless 浏览器验证：4 张算法卡、动态参数、20qps 令牌桶启动后 KPI 增长、暂停冻结、重置归零 |
 | T9 | Canvas 图表渲染 | `feat(T9): Canvas 图表渲染` | `mvn -q verify` 退出码 0；headless Chrome 验证固定窗口/令牌桶图形差异、DPR=2 画布 1644×422、暂停冻结、重置归零 |
 | T10 | 控件联动与倍速 | `feat(T10): 控件联动与倍速` | `mvn -q verify` 退出码 0；headless Chrome：50x 下 900ms 内 offered=700、hover 显示 t/offered/passed/rejected/level、参数变更后重建为空闲、越界禁用开始 |
-| T11 | Redis 分布式实现 | `feat(T11): Redis 分布式实现` | `mvn -q clean verify` 退出码 0；IT 6 skipped（无 Docker）；本机 Redis distributed 下 `backend=redis`、页面角标 local→redis；Redis 不可用降级 local + WARN |
+| T11 | Redis 分布式实现 | `feat(T11): Redis 分布式实现`；`feat(T11): 分布式时间语义锁 1x` | `mvn -q clean verify` 退出码 0；IT 6 skipped（Windows 无 Docker pipe）；distributed 下 `speed=1/speedAdjusted=true/backend=redis`、角标 local→redis；reset 后 `guardflow:rl:*` 为空；Redis 不可用降级 local + WARN |
 
 ---
 
@@ -63,9 +63,11 @@
 - T10 联动：合法参数/算法/倍速变更经 300ms 防抖后 pause → DELETE → POST idle；非法参数只暂停不删除；`start` 在 dirty/busy/running 时禁用。
 - T10 倍速：50x = 每 100ms 推进 50 个逻辑帧，30s 逻辑约 600ms；实测 900ms 内 offered=700。
 - T10 hover：`charts.js` 的 `locateSample` + DOM 参考线 + fixed tooltip，距视口边 8px 翻转；`index.html` 因此增加 tooltip/crosshair 容器。
-- 本机无 Docker CLI；`docker compose up -d redis` 未执行，用本机 Redis 8.8（localhost:6379）验证 distributed；`RedisLimiterIT` 无 Docker 时 6 个用例 skip，CI 有 Docker 会真正跑。
-- Lua 生产路径用 `redis.call('TIME')`；测试通过 `guardflow:test:clock` 注入逻辑时间复用 T4 向量；令牌桶与漏桶两套脚本均已实现。
-- 分布式 `backend` 已加入 `ExperimentView`；Redis key 为 `guardflow:tb:<id>` / `guardflow:lb:<id>`，TTL 1h，delete/reset 清理。
+- Windows 侧无 Docker CLI/pipe；WSL Ubuntu 有 Docker 29.1.3，但 Windows JVM 的 Testcontainers 不能直接使用 WSL daemon，`RedisLimiterIT` 本机仍 6 skip；WSL 未装 `docker compose` 插件。
+- 分布式 speed 锁 1x：创建响应 `speed:1`/`speedAdjusted:true`；前端倍速控件 disabled 并显示「Redis 版按服务器真实时间计时，不支持倍速」；Redis 不可用时降级 local 但 speed 仍锁 1。
+- Lua 生产路径用 `redis.call('TIME')`；测试通过 `guardflow:test:clock` 注入逻辑时间复用 T4 向量；令牌桶/漏桶两套脚本均已实现。
+- 分布式 `backend` / `speedAdjusted` 已加入创建响应与 `ExperimentView`；Redis key 为 `guardflow:rl:tb:<id>` / `guardflow:rl:lb:<id>`，TTL 1h，delete/reset 清理。
+- D8/D9 已写入决策记录；`spec-algorithms.md` §6、`api.md` §6、T11/T12 任务卡已补分布式时间语义与验收。
 
 ---
 
@@ -82,3 +84,5 @@
 | D5 | 指标推送用 SSE，不用 WebSocket | 单向、Spring 原生支持、实现成本低 | 2026-11-17 |
 | D6 | 分布式版为可选 profile，默认单机内存实现 | 不能让没装 Redis 的人打不开页面 | 2026-11-17 |
 | D7 | 实验状态纯内存，不做持久化 | 演示型产品，无需历史回溯 | 2026-11-17 |
+| D8 | 分布式模式 speed 锁定 1x | Redis Lua 用服务器墙钟，倍速会让逻辑时间与令牌补充速率不同基准；锁 1x 保证页面语义可解释 | 2026-11-18 |
+| D9 | 不把逻辑时间传入 Lua | 多实例虚拟时钟不同步会破坏分布式语义；不伪造服务端时间基准，也不按倍速放大 Redis 速率 | 2026-11-18 |

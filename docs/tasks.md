@@ -218,11 +218,15 @@
   - Lua 脚本内用 `redis.call('TIME')` 取服务端时间，**不用**应用侧时间
   - `RedisLimiterIT` 用 `@Testcontainers(disabledWithoutDocker = true)`，复用 T4 的测试向量
   - Redis 不可用时降级为本地实现并 WARN，不影响创建实验
+  - 分布式下 speed 锁 1x：请求其他倍速时创建响应返回 `speed:1` 与 `speedAdjusted:true`；前端倍速控件整体置灰并提示「Redis 版按服务器真实时间计时，不支持倍速」
+  - reset 必须 DEL 该实验的 `guardflow:rl:*` 键
 
 **验收**：
 1. `docker compose up -d redis`
 2. `mvn -q -pl server test -Dtest=RedisLimiterIT` 通过（无 Docker 时应 skip 而非 fail）
 3. 页面上角标由 `local` 变为 `redis`
+4. 创建 `speed:50` 的分布式实验：响应 `speed=1`、`speedAdjusted=true`，页面倍速控件 disabled 且提示文案出现
+5. reset 后 `redis-cli --scan --pattern 'guardflow:rl:*'` 无输出
 
 **不做**：不做集群/哨兵；不做窗口类算法的 Redis 版。
 
@@ -240,8 +244,9 @@
   4. 四种算法对比表（含「固定窗口的 2 倍突发」现象说明）
   5. 架构图（ASCII 或 Mermaid）
   6. 指标口径与实现取舍链接到 `docs/`
-  7. Roadmap
-- 要求：GIF 分镜脚本写在 `docs/README.md` 附录（录屏步骤 5 步）
+  7. 分布式模式的时间语义：为什么锁 1x
+  8. Roadmap
+- 要求：GIF 分镜脚本写在 `docs/README.md` 附录（录屏步骤 5 步）；README 第 7 项至少 3 句，写清「Lua 用 Redis TIME → 逻辑时间与令牌补充基准脱钩 → 分布式锁 1x」的因果链，不得省略
 
 **验收**：新克隆仓库 → 按 README 三条命令能跑起来；README 中每条链接可点开。
 

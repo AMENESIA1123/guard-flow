@@ -121,6 +121,8 @@ input.invalid { border-color: #ef4444; }
 }
 .speed-btn:last-child { border-right: 0; }
 .speed-btn.selected { background: var(--accent); color: #fff; }
+.speed-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.speed-hint { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 
 .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .btn {

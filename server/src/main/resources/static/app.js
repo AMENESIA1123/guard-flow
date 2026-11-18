@@ -5,7 +5,7 @@ const REASONS = ['WINDOW_LIMIT', 'QUEUE_FULL', 'NO_TOKEN', 'PASSED'];
 const $ = (id) => document.getElementById(id);
 const state = {
   algorithms: [], algorithm: null, speed: 10, status: 'idle', id: null, stream: null,
-  busy: false, dirty: false, backend: 'local', totals: { offered: 0, passed: 0, rejected: 0 },
+  busy: false, dirty: false, backend: 'local', locked: false, totals: { offered: 0, passed: 0, rejected: 0 },
   reasons: { WINDOW_LIMIT: 0, QUEUE_FULL: 0, NO_TOKEN: 0, PASSED: 0 }, samples: [], level: 0,
 };
 const scheduleDraw = createChartScheduler($('decision-chart'), $('level-chart'), () => ({ samples: state.samples, algorithm: state.algorithm }));
@@ -24,6 +24,10 @@ async function api(path, options = {}) {
 async function create(params, input) {
   const created = await api('/api/experiments', { method: 'POST', body: JSON.stringify({ algorithm: state.algorithm, params: params.values, input: input.input, speed: state.speed }) });
   state.id = created.id; state.dirty = false;
+  state.backend = created.backend || state.backend;
+  state.speed = created.speed ?? state.speed;
+  if (created.speedAdjusted) lockSpeed();
+  setConnection(true);
 }
 
 function toast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 3000); }
@@ -110,9 +114,14 @@ function validateInput() {
 }
 
 function renderSpeed() {
-  $('speed-control').innerHTML = [1, 5, 10, 20, 50].map((speed) => `<button type="button" class="speed-btn${speed === state.speed ? ' selected' : ''}" data-speed="${speed}">${speed}x</button>`).join('');
-  $('speed-control').querySelectorAll('button').forEach((button) => button.addEventListener('click', () => { state.speed = Number(button.dataset.speed); renderSpeed(); scheduleRebuild(true); }));
+  $('speed-control').innerHTML = [1, 5, 10, 20, 50].map((speed) => `<button type="button" class="speed-btn${speed === state.speed ? ' selected' : ''}" data-speed="${speed}"${state.locked ? ' disabled' : ''}>${speed}x</button>`).join('');
+  $('speed-control').querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
+    if (state.locked) return;
+    state.speed = Number(button.dataset.speed); renderSpeed(); scheduleRebuild(true);
+  }));
 }
+
+function lockSpeed() { if (state.locked) return; state.locked = true; state.speed = 1; renderSpeed(); $('speed-hint').hidden = false; }
 
 function render() {
   const last = state.samples[state.samples.length - 1];
@@ -152,6 +161,7 @@ function openStream() {
 function applySnapshot(view) {
   state.status = view.status; state.totals = { ...view.totals }; state.level = view.level;
   state.backend = view.backend === 'redis' ? 'redis' : 'local';
+  if (view.speedAdjusted) lockSpeed();
   setConnection(true);
   state.samples = (view.samples || []).slice(-300);
   state.reasons = { WINDOW_LIMIT: 0, QUEUE_FULL: 0, NO_TOKEN: 0, PASSED: view.totals.passed };
@@ -227,8 +237,10 @@ function bind() {
 async function init() {
   bind(); renderSpeed();
   try {
-    state.algorithms = (await api('/api/algorithms')).sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
+    const [algorithms, health] = await Promise.all([api('/api/algorithms'), api('/api/health').catch(() => null)]);
+    state.algorithms = algorithms.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
     if (!state.algorithms.length) throw new Error('没有可用算法');
+    if (health?.profile?.includes('distributed')) lockSpeed();
     state.algorithm = state.algorithms[0].id;
     renderAlgorithms(); renderParams(); renderModeFields(); clearData(); syncButtons(); setConnection(true);
   } catch (error) { toast(error.message); }

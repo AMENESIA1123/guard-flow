@@ -27,6 +27,7 @@ public final class ExperimentRuntime {
     private final int bufferSize;
     private final OffsetDateTime createdAt;
     private final String backend;
+    private final boolean speedAdjusted;
     private final SampleAggregator aggregator = new SampleAggregator();
     private final Deque<Sample> samples = new ArrayDeque<>();
 
@@ -48,6 +49,12 @@ public final class ExperimentRuntime {
     public ExperimentRuntime(String id, Supplier<Limiter> limiterSupplier,
                              Supplier<InputGenerator> inputSupplier, int speed,
                              long tickMillis, int bufferSize, String backend) {
+        this(id, limiterSupplier, inputSupplier, speed, tickMillis, bufferSize, backend, false);
+    }
+
+    public ExperimentRuntime(String id, Supplier<Limiter> limiterSupplier,
+                             Supplier<InputGenerator> inputSupplier, int speed,
+                             long tickMillis, int bufferSize, String backend, boolean speedAdjusted) {
         if (tickMillis <= 0) {
             throw new IllegalArgumentException("tickMillis must be > 0");
         }
@@ -61,6 +68,7 @@ public final class ExperimentRuntime {
         this.tickMillis = tickMillis;
         this.bufferSize = bufferSize;
         this.backend = backend;
+        this.speedAdjusted = speedAdjusted;
         this.createdAt = OffsetDateTime.now();
         this.limiter = limiterSupplier.get();
         this.input = inputSupplier.get();
@@ -110,7 +118,7 @@ public final class ExperimentRuntime {
     public synchronized ExperimentView view() {
         long t = samples.isEmpty() ? 0L : samples.peekLast().t();
         double level = samples.isEmpty() ? limiter.snapshot(t).level() : samples.peekLast().level();
-        return new ExperimentView(id, status.wireName(), t, aggregator.totals(), level, List.copyOf(samples), backend);
+        return new ExperimentView(id, status.wireName(), t, aggregator.totals(), level, List.copyOf(samples), backend, speedAdjusted);
     }
 
     public String id() {
@@ -131,5 +139,9 @@ public final class ExperimentRuntime {
 
     public String backend() {
         return backend;
+    }
+
+    public boolean speedAdjusted() {
+        return speedAdjusted;
     }
 }

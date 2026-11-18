@@ -9,7 +9,8 @@ public record ExperimentView(
         Totals totals,
         double level,
         List<Sample> samples,
-        String backend) {
+        String backend,
+        boolean speedAdjusted) {
 
     public record Totals(long offered, long passed, long rejected) {
     }

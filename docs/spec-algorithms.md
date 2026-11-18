@@ -280,7 +280,28 @@ long lastDrainMillis;    // 上次结算时间
 2. 同一 `t` 多次调用，水位单调性由算法语义决定，但**不得出现负值或超过 1**。
 3. `snapshot(t)` 必须与「不调用 `tryAcquire` 直接读状态」一致，且**不推进**任何时间。
 
-## 6. 待补（本版不做，写在 README 的 Roadmap 里）
+## 6. 分布式模式的时间语义
+
+Redis 版限流器（`token_bucket` / `leaky_bucket`）在 Lua 内用 `redis.call('TIME')` 取 Redis 服务器墙钟判定，**不读取应用传入的 `nowMillis`**。因此分布式模式与单机模式的虚拟时钟语义脱钩，必须承认以下三条后果：
+
+1. **倍速下基准不同**：`Sample.t` 推进的是逻辑时间，而 Redis 的令牌补充/漏桶出队按服务器真实时间结算；倍速越高，两者偏差越大。同一组参数与输入，单机结果与分布式结果**不可直接比较**。
+2. **指标只在 speed=1 时对齐**：`Sample.t` 仍是逻辑时间，`level` 读的是 Redis 里的真实状态。只有 `speed=1` 时，逻辑时间与 Redis 墙钟才近似同一基准，页面上的 `t` 与 `level` 才有一致的解释。
+3. **reset 必须 DEL 键**：分布式 reset 必须删除该实验的 `guardflow:rl:*` 键；只清页面/运行时缓存而不删键，下一次 `tryAcquire` 会继续使用旧令牌或旧队列，页面看起来「归零失败」。
+
+硬性约束：
+
+- 分布式 profile 下 `speed` 强制为 `1`。请求携带 `5/10/20/50` 时按 `1` 创建，创建响应返回 `speed:1` 与 `speedAdjusted:true`；请求本来就是 `1` 时 `speedAdjusted:false`。
+- 前端在分布式模式下把倍速控件整体置灰、不可点击，并提示「Redis 版按服务器真实时间计时，不支持倍速」。
+- `backend` 为 `"local"` / `"redis"`；Redis 不可用时降级 `"local"` 并记录 WARN，但分布式 profile 的 speed=1 约束不变。
+- 测试可通过 `guardflow:test:clock` 注入逻辑时间复用 T4 向量；生产路径不设置该键，始终使用 `redis.call('TIME')`。
+
+为什么不把逻辑时间传给 Lua：
+
+- 多实例部署时各实例的虚拟时钟可能不同步；让 Lua 信任应用传入的时间，会让同一 Redis 状态被不同基准读写，分布式判定失去一致性。
+- 宁可锁 `1x`，也不伪造一个看起来像虚拟时间的服务端基准；伪造基准会让时间语义更难解释。
+- 不采用「倍速下把 Redis 速率乘以 speed」：页面参数（例如 2/s）与真实生效速率（100/s）会不一致，调参演示失去意义。
+
+## 7. 待补（本版不做，写在 README 的 Roadmap 里）
 
 - 滑动窗口计数器近似法（Sliding Window Counter）
 - 分布式令牌桶（Redis + Lua，见 `tasks.md` T11）

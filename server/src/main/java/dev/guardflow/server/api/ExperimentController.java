@@ -42,7 +42,9 @@ public class ExperimentController {
                 request.params(),
                 request.input(),
                 runtime.speed(),
-                runtime.createdAt()));
+                runtime.createdAt(),
+                runtime.backend(),
+                runtime.speedAdjusted()));
     }
 
     @PostMapping("/{id}/control")
@@ -71,7 +73,8 @@ public class ExperimentController {
     }
 
     public record CreateResponse(String id, String status, String algorithm, Map<String, Number> params,
-                                 CreateExperimentRequest.InputSpec input, int speed, OffsetDateTime createdAt) {
+                                 CreateExperimentRequest.InputSpec input, int speed, OffsetDateTime createdAt,
+                                 String backend, boolean speedAdjusted) {
     }
 
     public record ControlResponse(String id, String status) {

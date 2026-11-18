@@ -59,10 +59,12 @@ public class ExperimentRegistry {
         if (algorithm == null || algorithm.isBlank()) {
             throw new IllegalArgumentException("algorithm must not be blank");
         }
-        int speed = request.speed() == null ? 10 : request.speed();
-        if (!ALLOWED_SPEEDS.contains(speed)) {
+        int requestedSpeed = request.speed() == null ? 10 : request.speed();
+        if (!ALLOWED_SPEEDS.contains(requestedSpeed)) {
             throw new IllegalArgumentException("speed must be one of " + ALLOWED_SPEEDS);
         }
+        int speed = distributed ? 1 : requestedSpeed;
+        boolean speedAdjusted = speed != requestedSpeed;
         if (request.input() == null) {
             throw new IllegalArgumentException("input must not be null");
         }
@@ -81,7 +83,7 @@ public class ExperimentRegistry {
                 && ("token_bucket".equals(algorithm) || "leaky_bucket".equals(algorithm))
                 && redisAvailable();
         String backend = useRedis ? "redis" : "local";
-        String redisKey = useRedis ? "guardflow:" + ("token_bucket".equals(algorithm) ? "tb:" : "lb:") + id : null;
+        String redisKey = useRedis ? "guardflow:rl:" + ("token_bucket".equals(algorithm) ? "tb:" : "lb:") + id : null;
         Supplier<Limiter> limiterSupplier = useRedis
                 ? () -> createRedisLimiter(algorithm, redisKey, params)
                 : () -> LimiterFactory.create(new LimiterConfig(algorithm, params));
@@ -92,7 +94,8 @@ public class ExperimentRegistry {
                 speed,
                 tickMillis,
                 bufferSize,
-                backend);
+                backend,
+                speedAdjusted);
         if (useRedis) {
             redisKeys.put(id, redisKey);
         }

@@ -211,6 +211,11 @@ data: {"t":4200,"offered":2,"passed":0,"rejected":2,"level":0.3,"reason":"NO_TOK
 
 ## 6. 分布式模式差异（profile=distributed）
 
-- 仅 `token_bucket` 与 `leaky_bucket` 提供 Redis 实现，窗口类算法回落到单机实现并在 `GET /api/experiments/{id}` 的 `backend` 字段标注 `"redis"` / `"local"`
-- `backend` 字段默认 `"local"`，前端在 KPI 区显示一个角标
-- Redis 不可用时**不得**导致创建实验失败：降级为 `local` 并记录 WARN 日志
+- 仅 `token_bucket` 与 `leaky_bucket` 提供 Redis 实现，窗口类算法回落到单机实现。
+- `backend`：`"local"` | `"redis"`，默认 `"local"`；出现在创建响应、`GET /api/experiments/{id}` 与 SSE `snapshot` 中，前端据此显示角标。
+- `speedAdjusted`：boolean，默认 `false`；分布式下请求倍速不是 1 时为 `true`，实际 `speed` 强制为 1。
+- 分布式下 `speed` 强制为 1：请求 5/10/20/50 时按 1 创建，响应返回 `speed:1` 与 `speedAdjusted:true`；请求本来就是 1 时返回 `speedAdjusted:false`。
+- 前端在分布式模式下把倍速控件整体置灰不可点，并提示「Redis 版按服务器真实时间计时，不支持倍速」。
+- Redis 版 Lua 用 `redis.call('TIME')` 取服务器墙钟，不读应用逻辑时间；因此 `Sample.t` 仍是逻辑时间、`level` 是 Redis 真实状态，仅 speed=1 时语义对齐（详见 `spec-algorithms.md` §6）。
+- reset 必须删除该实验的 `guardflow:rl:*` 键；否则旧令牌/旧队列会让页面看似归零失败。
+- Redis 不可用时**不得**导致创建实验失败：降级为 `local` 并记录 WARN 日志；分布式 profile 的 speed=1 约束保持。
