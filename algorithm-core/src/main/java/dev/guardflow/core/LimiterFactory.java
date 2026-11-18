@@ -2,6 +2,7 @@ package dev.guardflow.core;
 
 import dev.guardflow.core.limiter.FixedWindowLimiter;
 import dev.guardflow.core.limiter.SlidingWindowLogLimiter;
+import dev.guardflow.core.limiter.TokenBucketLimiter;
 
 import java.util.Map;
 
@@ -35,6 +36,13 @@ public final class LimiterFactory {
             }
             return new SlidingWindowLogLimiter(requireInt(params, "limit"), requireLong(params, "windowMillis"));
         }
+        if ("token_bucket".equals(algorithm)) {
+            Map<String, Number> params = config.params();
+            if (params == null) {
+                throw new IllegalArgumentException("params must not be null");
+            }
+            return new TokenBucketLimiter(requireDouble(params, "capacity"), requireDouble(params, "ratePerSecond"));
+        }
         throw new UnsupportedOperationException("unsupported algorithm: " + algorithm);
     }
 
@@ -52,5 +60,13 @@ public final class LimiterFactory {
             throw new IllegalArgumentException("missing parameter: " + key);
         }
         return value.longValue();
+    }
+
+    private static double requireDouble(Map<String, Number> params, String key) {
+        Number value = params.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("missing parameter: " + key);
+        }
+        return value.doubleValue();
     }
 }
