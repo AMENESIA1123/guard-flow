@@ -29,7 +29,7 @@
 | T9 | Canvas 图表渲染 | `feat(T9): Canvas 图表渲染` | `mvn -q verify` 退出码 0；headless Chrome 验证固定窗口/令牌桶图形差异、DPR=2 画布 1644×422、暂停冻结、重置归零 |
 | T10 | 控件联动与倍速 | `feat(T10): 控件联动与倍速` | `mvn -q verify` 退出码 0；headless Chrome：50x 下 900ms 内 offered=700、hover 显示 t/offered/passed/rejected/level、参数变更后重建为空闲、越界禁用开始 |
 | T11 | Redis 分布式实现 | `feat(T11): Redis 分布式实现`；`feat(T11): 分布式时间语义锁 1x` | `mvn -q clean verify` 退出码 0；IT 6 skipped（Windows 无 Docker pipe）；distributed 下 `speed=1/speedAdjusted=true/backend=redis`、角标 local→redis；reset 后 `guardflow:rl:*` 为空；Redis 不可用降级 local + WARN |
-| T12 | 文档、README、发布 | `feat(T12): 文档、README 与发布` | `mvn -q clean verify` 退出码 0；README 三条命令启动成功（`/` 200、health UP）；README/docs 链接检查 `LINKS_OK`；CHANGELOG 与 GIF 分镜完成 |
+| T12 | 文档、README、发布 | `feat(T12): 文档、README 与发布` | `mvn -q clean verify` 退出码 0；新克隆按 README 三条命令启动成功（`/` 200、health UP）；README/docs 链接检查 `LINKS_OK`；CHANGELOG 与 GIF 分镜完成 |
 
 ---
 
