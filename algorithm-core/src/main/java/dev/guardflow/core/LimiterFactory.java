@@ -1,13 +1,14 @@
 package dev.guardflow.core;
 
 import dev.guardflow.core.limiter.FixedWindowLimiter;
+import dev.guardflow.core.limiter.LeakyBucketLimiter;
 import dev.guardflow.core.limiter.SlidingWindowLogLimiter;
 import dev.guardflow.core.limiter.TokenBucketLimiter;
 
 import java.util.Map;
 
 /**
- * 按算法 id 创建限流器；未知算法抛 UnsupportedOperationException，参数缺失抛 IllegalArgumentException。
+ * 按算法 id 创建限流器；未知算法与参数缺失都抛 IllegalArgumentException。
  */
 public final class LimiterFactory {
 
@@ -43,7 +44,14 @@ public final class LimiterFactory {
             }
             return new TokenBucketLimiter(requireDouble(params, "capacity"), requireDouble(params, "ratePerSecond"));
         }
-        throw new UnsupportedOperationException("unsupported algorithm: " + algorithm);
+        if ("leaky_bucket".equals(algorithm)) {
+            Map<String, Number> params = config.params();
+            if (params == null) {
+                throw new IllegalArgumentException("params must not be null");
+            }
+            return new LeakyBucketLimiter(requireInt(params, "capacity"), requireDouble(params, "ratePerSecond"));
+        }
+        throw new IllegalArgumentException("unsupported algorithm: " + algorithm);
     }
 
     private static int requireInt(Map<String, Number> params, String key) {

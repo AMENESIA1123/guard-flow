@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T4 令牌桶完成，待进入 T5**
-- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`
-- 下一个任务卡：`T5`
+- 阶段：**T5 漏桶与工厂完成，待进入 T6**
+- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`
+- 下一个任务卡：`T6`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -22,12 +22,13 @@
 | T2 | 固定窗口 | `feat(T2): 实现固定窗口`；`test(T2): 覆盖非法 permits` | `mvn -pl algorithm-core test -Dtest=FixedWindowLimiterTest` 6 个用例全绿（FW-01~FW-05 + 非法 permits）；`mvn -q clean verify` 退出码 0 |
 | T3 | 滑动窗口（日志法） | `feat(T3): 实现滑动窗口` | `mvn -pl algorithm-core test -Dtest=SlidingWindowLogLimiterTest` 7 个用例全绿；`mvn -q clean verify` 退出码 0 |
 | T4 | 令牌桶 | `feat(T4): 实现令牌桶` | `mvn -pl algorithm-core test -Dtest=TokenBucketLimiterTest` 6 个用例全绿；`mvn -q clean verify` 退出码 0 |
+| T5 | 漏桶 + 工厂补全 | `feat(T5): 实现漏桶与工厂补全` | `mvn -pl algorithm-core test` 30 个用例全绿（四个算法测试 + 工厂测试）；`mvn -q clean verify` 退出码 0 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T5 · 漏桶 + 工厂补全** 开始。
+从 `docs/tasks.md` 的 **T6 · 服务骨架与 REST** 开始。
 
 ---
 
@@ -41,6 +42,8 @@
 - `LimiterFactory` 的算法 id 以 `api.md` 为准：`fixed_window`、`sliding_window`、`token_bucket`、`leaky_bucket`。
 - 滑动窗口日志按非递减时间戳存储，`t` 相同的多条记录是允许的（SW-01 要求 `t=0` × 10）；规格里的「严格递增」按非递减理解。
 - 令牌桶的 `Snapshot.used` 返回剩余令牌数（与 `level = tokens / capacity` 一致），不是已消耗量。
+- 漏桶的 `Snapshot.used` 返回当前排队数（`queued`）。
+- `LimiterFactoryTest` 是按 T5 卡新增的，`file-manifest.md` 未列；工厂对未知算法 id 现抛 `IllegalArgumentException`（覆盖 T2 的 `UnsupportedOperationException` 占位行为）。
 
 ---
 
