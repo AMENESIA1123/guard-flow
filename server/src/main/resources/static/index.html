@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>guard-flow · 限流算法实验室</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">◈</span>
+        <h1>guard-flow<span class="subtitle">限流算法实验室</span></h1>
+      </div>
+      <span id="backend-badge" class="badge"><span class="dot"></span><span id="backend-text">local</span></span>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <section class="section">
+          <h2>算法</h2>
+          <div id="algorithm-list" class="algorithm-list" role="radiogroup" aria-label="限流算法"></div>
+        </section>
+
+        <section class="section">
+          <h2>参数</h2>
+          <div id="param-form" class="param-form"></div>
+        </section>
+
+        <section class="section">
+          <h2>流量模式</h2>
+          <select id="mode-select" class="select" aria-label="流量模式">
+            <option value="constant">恒定</option>
+            <option value="step">阶跃</option>
+            <option value="spike">尖峰</option>
+            <option value="poisson">泊松</option>
+          </select>
+          <div id="mode-fields" class="mode-fields"></div>
+        </section>
+
+        <section class="section">
+          <h2>倍速</h2>
+          <div id="speed-control" class="segmented" role="group" aria-label="倍速"></div>
+        </section>
+
+        <section class="section actions">
+          <button id="start-btn" class="btn primary" type="button" disabled>开始</button>
+          <button id="pause-btn" class="btn outline" type="button" disabled>暂停</button>
+          <button id="reset-btn" class="btn outline muted" type="button" disabled>重置</button>
+        </section>
+      </aside>
+
+      <main class="main">
+        <section class="kpi-row" aria-label="关键指标">
+          <div class="kpi"><span class="kpi-label">当前 QPS</span><span id="kpi-qps" class="kpi-value">0</span></div>
+          <div class="kpi"><span class="kpi-label">累计请求</span><span id="kpi-offered" class="kpi-value">0</span></div>
+          <div class="kpi"><span class="kpi-label">累计放行</span><span id="kpi-passed" class="kpi-value">0</span></div>
+          <div class="kpi"><span class="kpi-label">累计拒绝</span><span id="kpi-rejected" class="kpi-value">0</span></div>
+          <div class="kpi"><span class="kpi-label">当前水位</span><span id="kpi-level" class="kpi-value">0.0%</span></div>
+        </section>
+
+        <section class="panel chart-panel chart-a">
+          <div class="panel-head"><span>图 A · 决策堆叠柱</span><span>最近 3 条 Sample（T9 Canvas 占位）</span></div>
+          <pre id="sample-preview" class="sample-preview">[]</pre>
+        </section>
+
+        <section class="panel chart-panel chart-b">
+          <div class="panel-head"><span>图 B · 水位折线</span><span>T9 Canvas 占位</span></div>
+          <div class="placeholder">Canvas 图表将在 T9 接入</div>
+        </section>
+
+        <section class="panel reason-bar" aria-label="拒绝原因">
+          <div id="reason-chips" class="reason-chips"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T7 SSE 指标流完成，待进入 T8**
-- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`
-- 下一个任务卡：`T8`
+- 阶段：**T8 前端骨架与静态托管完成，待进入 T9**
+- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`
+- 下一个任务卡：`T9`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -25,12 +25,13 @@
 | T5 | 漏桶 + 工厂补全 | `feat(T5): 实现漏桶与工厂补全` | `mvn -pl algorithm-core test` 30 个用例全绿（四个算法测试 + 工厂测试）；`mvn -q clean verify` 退出码 0 |
 | T6 | 服务骨架与 REST | `feat(T6): 服务骨架与 REST`；`test(T6): 覆盖参数校验 400` | `mvn -q clean verify` 退出码 0（核心 30 + server 8）；`mvn -q clean package -DskipTests` 退出码 0；启动后 `/api/algorithms` 返回 4 个算法 |
 | T7 | SSE 指标流 | `feat(T7): SSE 指标流` | `mvn -q clean verify` 退出码 0（核心 30 + server 9）；`curl -N /stream` 收到 `snapshot` + 连续 `sample`；断开后日志无异常 |
+| T8 | 前端骨架与静态托管 | `feat(T8): 前端骨架与静态托管` | `mvn -q clean verify` 退出码 0；headless 浏览器验证：4 张算法卡、动态参数、20qps 令牌桶启动后 KPI 增长、暂停冻结、重置归零 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T8 · 前端骨架与静态托管** 开始。
+从 `docs/tasks.md` 的 **T9 · Canvas 图表渲染** 开始。
 
 ---
 
@@ -52,6 +53,8 @@
 - `TickerConfig` 单线程 `fixedRate=100ms`，每轮按每个实验的 `speed` 推进对应逻辑帧；`guardflow.ticker.enabled=false` 可关闭（`ApiSmokeTest` 用它避免与手动 tick 竞争）。
 - SSE：连接建立推 `snapshot`，每帧推 `sample`，控制接口变更状态推 `state`；`AsyncRequestNotUsableException` 在 `GlobalExceptionHandler` 中直接吞掉，避免向已提交的 `text/event-stream` 写 JSON。
 - `ExperimentRuntimeTest` 固定 20qps + 令牌桶 10/2，20 次 tick 后 totals 为 offered=40 / passed=13 / rejected=27。
+- T8 前端：`app.js` 250 行、零依赖；默认算法 `fixed_window`，卡片顺序按 ui-spec 固定为 fixed → sliding → token → leaky（不按 API 顺序）。
+- T8 图表区仍是 `<pre>` 最近 3 条 Sample + 图 B 占位；Canvas 留给 T9。参数/算法/倍速变更只置 `needsNew`，下次 Start 时重建；运行中变更需先暂停（§7 的即时联动留到 T10）。
 
 ---
 
