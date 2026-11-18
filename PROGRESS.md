@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T10 控件联动与倍速完成，待进入 T11**
-- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`、`T9`、`T10`
-- 下一个任务卡：`T11`
+- 阶段：**T11 Redis 分布式实现完成，待进入 T12**
+- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`、`T9`、`T10`、`T11`
+- 下一个任务卡：`T12`
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -28,12 +28,13 @@
 | T8 | 前端骨架与静态托管 | `feat(T8): 前端骨架与静态托管` | `mvn -q clean verify` 退出码 0；headless 浏览器验证：4 张算法卡、动态参数、20qps 令牌桶启动后 KPI 增长、暂停冻结、重置归零 |
 | T9 | Canvas 图表渲染 | `feat(T9): Canvas 图表渲染` | `mvn -q verify` 退出码 0；headless Chrome 验证固定窗口/令牌桶图形差异、DPR=2 画布 1644×422、暂停冻结、重置归零 |
 | T10 | 控件联动与倍速 | `feat(T10): 控件联动与倍速` | `mvn -q verify` 退出码 0；headless Chrome：50x 下 900ms 内 offered=700、hover 显示 t/offered/passed/rejected/level、参数变更后重建为空闲、越界禁用开始 |
+| T11 | Redis 分布式实现 | `feat(T11): Redis 分布式实现` | `mvn -q clean verify` 退出码 0；IT 6 skipped（无 Docker）；本机 Redis distributed 下 `backend=redis`、页面角标 local→redis；Redis 不可用降级 local + WARN |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T11 · Redis 分布式实现** 开始。
+从 `docs/tasks.md` 的 **T12 · 文档、README、发布** 开始。
 
 ---
 
@@ -62,6 +63,9 @@
 - T10 联动：合法参数/算法/倍速变更经 300ms 防抖后 pause → DELETE → POST idle；非法参数只暂停不删除；`start` 在 dirty/busy/running 时禁用。
 - T10 倍速：50x = 每 100ms 推进 50 个逻辑帧，30s 逻辑约 600ms；实测 900ms 内 offered=700。
 - T10 hover：`charts.js` 的 `locateSample` + DOM 参考线 + fixed tooltip，距视口边 8px 翻转；`index.html` 因此增加 tooltip/crosshair 容器。
+- 本机无 Docker CLI；`docker compose up -d redis` 未执行，用本机 Redis 8.8（localhost:6379）验证 distributed；`RedisLimiterIT` 无 Docker 时 6 个用例 skip，CI 有 Docker 会真正跑。
+- Lua 生产路径用 `redis.call('TIME')`；测试通过 `guardflow:test:clock` 注入逻辑时间复用 T4 向量；令牌桶与漏桶两套脚本均已实现。
+- 分布式 `backend` 已加入 `ExperimentView`；Redis key 为 `guardflow:tb:<id>` / `guardflow:lb:<id>`，TTL 1h，delete/reset 清理。
 
 ---
 

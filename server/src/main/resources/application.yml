@@ -7,3 +7,12 @@ guardflow:
   tick-millis: 100
   buffer-size: 300
   max-experiments: 20
+---
+spring:
+  config:
+    activate:
+      on-profile: distributed
+  data:
+    redis:
+      host: localhost
+      port: 6379

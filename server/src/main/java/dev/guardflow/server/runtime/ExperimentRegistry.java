@@ -5,7 +5,15 @@ import dev.guardflow.core.LimiterConfig;
 import dev.guardflow.core.LimiterFactory;
 import dev.guardflow.server.api.dto.CreateExperimentRequest;
 import dev.guardflow.server.api.dto.ExperimentView;
+import dev.guardflow.server.distributed.RedisLeakyBucketLimiter;
+import dev.guardflow.server.distributed.RedisTokenBucketLimiter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,24 +22,33 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 @Service
 public class ExperimentRegistry {
 
+    private static final Logger log = LoggerFactory.getLogger(ExperimentRegistry.class);
     private static final Set<Integer> ALLOWED_SPEEDS = Set.of(1, 5, 10, 20, 50);
 
     private final Map<String, ExperimentRuntime> experiments = new ConcurrentHashMap<>();
+    private final Map<String, String> redisKeys = new ConcurrentHashMap<>();
     private final long tickMillis;
     private final int bufferSize;
     private final int maxExperiments;
+    private final StringRedisTemplate redis;
+    private final boolean distributed;
 
     public ExperimentRegistry(
             @Value("${guardflow.tick-millis:100}") long tickMillis,
             @Value("${guardflow.buffer-size:300}") int bufferSize,
-            @Value("${guardflow.max-experiments:20}") int maxExperiments) {
+            @Value("${guardflow.max-experiments:20}") int maxExperiments,
+            StringRedisTemplate redis,
+            Environment environment) {
         this.tickMillis = tickMillis;
         this.bufferSize = bufferSize;
         this.maxExperiments = maxExperiments;
+        this.redis = redis;
+        this.distributed = environment.acceptsProfiles(Profiles.of("distributed"));
     }
 
     public ExperimentRuntime create(CreateExperimentRequest request) {
@@ -60,13 +77,25 @@ public class ExperimentRegistry {
         }
 
         String id = "e_" + UUID.randomUUID().toString().replace("-", "").substring(0, 6);
+        boolean useRedis = distributed
+                && ("token_bucket".equals(algorithm) || "leaky_bucket".equals(algorithm))
+                && redisAvailable();
+        String backend = useRedis ? "redis" : "local";
+        String redisKey = useRedis ? "guardflow:" + ("token_bucket".equals(algorithm) ? "tb:" : "lb:") + id : null;
+        Supplier<Limiter> limiterSupplier = useRedis
+                ? () -> createRedisLimiter(algorithm, redisKey, params)
+                : () -> LimiterFactory.create(new LimiterConfig(algorithm, params));
         ExperimentRuntime runtime = new ExperimentRuntime(
                 id,
-                () -> LimiterFactory.create(new LimiterConfig(algorithm, params)),
+                limiterSupplier,
                 () -> buildInput(inputSpec),
                 speed,
                 tickMillis,
-                bufferSize);
+                bufferSize,
+                backend);
+        if (useRedis) {
+            redisKeys.put(id, redisKey);
+        }
         experiments.put(id, runtime);
         return runtime;
     }
@@ -95,7 +124,10 @@ public class ExperimentRegistry {
         switch (action) {
             case "start" -> runtime.start();
             case "pause" -> runtime.pause();
-            case "reset" -> runtime.reset();
+            case "reset" -> {
+                clearRedisKey(id);
+                runtime.reset();
+            }
             default -> throw new IllegalArgumentException("unknown action: " + action);
         }
         return runtime;
@@ -103,6 +135,53 @@ public class ExperimentRegistry {
 
     public void delete(String id) {
         experiments.remove(id);
+        removeRedisKey(id);
+    }
+
+    private boolean redisAvailable() {
+        if (!distributed || redis == null) {
+            return false;
+        }
+        try {
+            String pong = redis.execute((RedisCallback<String>) connection -> connection.ping());
+            return "PONG".equalsIgnoreCase(pong);
+        } catch (RuntimeException exception) {
+            log.warn("Redis unavailable, falling back to local backend: {}", exception.getMessage());
+            return false;
+        }
+    }
+
+    private Limiter createRedisLimiter(String algorithm, String key, Map<String, Number> params) {
+        if ("token_bucket".equals(algorithm)) {
+            return new RedisTokenBucketLimiter(redis, key,
+                    params.get("capacity").doubleValue(), params.get("ratePerSecond").doubleValue());
+        }
+        return new RedisLeakyBucketLimiter(redis, key,
+                params.get("capacity").intValue(), params.get("ratePerSecond").doubleValue());
+    }
+
+    private void clearRedisKey(String id) {
+        String key = redisKeys.get(id);
+        if (key == null) {
+            return;
+        }
+        try {
+            redis.delete(key);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to clear Redis key {}: {}", key, exception.getMessage());
+        }
+    }
+
+    private void removeRedisKey(String id) {
+        String key = redisKeys.remove(id);
+        if (key == null) {
+            return;
+        }
+        try {
+            redis.delete(key);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to delete Redis key {}: {}", key, exception.getMessage());
+        }
     }
 
     private static Map<String, Number> copyParams(Map<String, Number> params) {

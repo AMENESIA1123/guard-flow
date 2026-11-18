@@ -8,7 +8,8 @@ public record ExperimentView(
         long t,
         Totals totals,
         double level,
-        List<Sample> samples) {
+        List<Sample> samples,
+        String backend) {
 
     public record Totals(long offered, long passed, long rejected) {
     }

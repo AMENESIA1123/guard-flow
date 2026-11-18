@@ -5,7 +5,7 @@ const REASONS = ['WINDOW_LIMIT', 'QUEUE_FULL', 'NO_TOKEN', 'PASSED'];
 const $ = (id) => document.getElementById(id);
 const state = {
   algorithms: [], algorithm: null, speed: 10, status: 'idle', id: null, stream: null,
-  busy: false, dirty: false, totals: { offered: 0, passed: 0, rejected: 0 },
+  busy: false, dirty: false, backend: 'local', totals: { offered: 0, passed: 0, rejected: 0 },
   reasons: { WINDOW_LIMIT: 0, QUEUE_FULL: 0, NO_TOKEN: 0, PASSED: 0 }, samples: [], level: 0,
 };
 const scheduleDraw = createChartScheduler($('decision-chart'), $('level-chart'), () => ({ samples: state.samples, algorithm: state.algorithm }));
@@ -135,7 +135,7 @@ function syncButtons() {
   $('reset-btn').disabled = state.busy || state.status === 'idle';
 }
 
-function setConnection(connected) { $('backend-badge').classList.toggle('disconnected', !connected); $('backend-text').textContent = connected ? 'local' : '连接断开'; }
+function setConnection(connected) { $('backend-badge').classList.toggle('disconnected', !connected); $('backend-text').textContent = connected ? state.backend : '连接断开'; }
 
 function closeStream() {
   if (state.stream) { state.stream.close(); state.stream = null; } setConnection(true);
@@ -151,6 +151,8 @@ function openStream() {
 
 function applySnapshot(view) {
   state.status = view.status; state.totals = { ...view.totals }; state.level = view.level;
+  state.backend = view.backend === 'redis' ? 'redis' : 'local';
+  setConnection(true);
   state.samples = (view.samples || []).slice(-300);
   state.reasons = { WINDOW_LIMIT: 0, QUEUE_FULL: 0, NO_TOKEN: 0, PASSED: view.totals.passed };
   (view.samples || []).forEach((sample) => { if (sample.rejected > 0 && sample.reason !== 'PASSED' && state.reasons[sample.reason] !== undefined) state.reasons[sample.reason] += sample.rejected; });
