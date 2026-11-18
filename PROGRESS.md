@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-- 阶段：**T11 Redis 分布式实现完成，待进入 T12**
-- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`、`T9`、`T10`、`T11`
-- 下一个任务卡：`T12`
+- 阶段：**T12 完成，项目收口**
+- 已完成任务卡：`T0`、`T1`、`T2`、`T3`、`T4`、`T5`、`T6`、`T7`、`T8`、`T9`、`T10`、`T11`、`T12`
+- 下一个任务卡：无（按 README Roadmap 继续）
 - 构建状态：`mvn -q clean verify` 通过（Maven 3.10.1 + JDK 21.0.6）
 
 ---
@@ -29,12 +29,13 @@
 | T9 | Canvas 图表渲染 | `feat(T9): Canvas 图表渲染` | `mvn -q verify` 退出码 0；headless Chrome 验证固定窗口/令牌桶图形差异、DPR=2 画布 1644×422、暂停冻结、重置归零 |
 | T10 | 控件联动与倍速 | `feat(T10): 控件联动与倍速` | `mvn -q verify` 退出码 0；headless Chrome：50x 下 900ms 内 offered=700、hover 显示 t/offered/passed/rejected/level、参数变更后重建为空闲、越界禁用开始 |
 | T11 | Redis 分布式实现 | `feat(T11): Redis 分布式实现`；`feat(T11): 分布式时间语义锁 1x` | `mvn -q clean verify` 退出码 0；IT 6 skipped（Windows 无 Docker pipe）；distributed 下 `speed=1/speedAdjusted=true/backend=redis`、角标 local→redis；reset 后 `guardflow:rl:*` 为空；Redis 不可用降级 local + WARN |
+| T12 | 文档、README、发布 | `feat(T12): 文档、README 与发布` | `mvn -q clean verify` 退出码 0；README 三条命令启动成功（`/` 200、health UP）；README/docs 链接检查 `LINKS_OK`；CHANGELOG 与 GIF 分镜完成 |
 
 ---
 
 ## 下一步
 
-从 `docs/tasks.md` 的 **T12 · 文档、README、发布** 开始。
+项目已按 T0~T12 收口；后续按 README Roadmap 迭代。
 
 ---
 
@@ -68,6 +69,8 @@
 - Lua 生产路径用 `redis.call('TIME')`；测试通过 `guardflow:test:clock` 注入逻辑时间复用 T4 向量；令牌桶/漏桶两套脚本均已实现。
 - 分布式 `backend` / `speedAdjusted` 已加入创建响应与 `ExperimentView`；Redis key 为 `guardflow:rl:tb:<id>` / `guardflow:rl:lb:<id>`，TTL 1h，delete/reset 清理。
 - D8/D9 已写入决策记录；`spec-algorithms.md` §6、`api.md` §6、T11/T12 任务卡已补分布式时间语义与验收。
+- T12：README 的 demo 仍是 `docs/demo.png` 截图占位（GIF 分镜在 `docs/README.md` 附录 5 步）；`docs/benchmark.md` 为可选项，未创建。
+- 发布前检查：README 本地链接 `LINKS_OK`；`mvn -q clean package -DskipTests` + `java -jar` 启动后 `/` 200、`/api/health` UP；分布式验收见 T11。
 
 ---
 
